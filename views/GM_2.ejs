@@ -127,7 +127,7 @@ function Load(){
     if((id = prompt("請輸入尼想要讀檔的ID：","")) != null){
         var data = {id: id};
         $.post('/' + gameID + '/load', data, function(obj){
-            init();
+            location.reload();
         }, 'text');
     }
 }

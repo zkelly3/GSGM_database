@@ -7,6 +7,7 @@ var connection = mysql.createConnection({
 });
 
 var db = {
+    /* wrap */
     connect: function() {
         return new Promise(function(resolve, reject) {
             connection.connect((err)=>{
@@ -30,12 +31,8 @@ var db = {
             });
         })
     },
-    getBgIID: function(SID) {
-        return db.query('SELECT bgIID FROM scene WHERE SID='+SID+';')
-            .then(function(results, fields) {
-                return results[0].bgIID;
-            });
-    },
+    
+    /* query image */
     getImageInfo: function(IID) {
         return db.query('SELECT `usage`, name, format, width, height FROM image WHERE IID='+IID+';')
             .then(function(results, fields) {
@@ -44,6 +41,28 @@ var db = {
                     width: results[0].width,
                     height: results[0].height
                 };
+            });
+    },
+    
+    /* query game */
+    getGameInfo: function(GID) {
+        return db.query('SELECT initSID, initAID FROM game WHERE GID=' + GID + ';')
+            .then(function(results, fields) {
+                return results[0];
+            });
+    },
+    
+    /* query scene */
+    getSID: function(gameID, scene) {
+        return db.query('SELECT SID FROM scene WHERE GID='+gameID+' AND name="'+scene+'";')
+            .then(function(results, fields) {
+                return results[0].SID;
+            });
+    },
+    getBgIID: function(SID) {
+        return db.query('SELECT bgIID FROM scene WHERE SID='+SID+';')
+            .then(function(results, fields) {
+                return results[0].bgIID;
             });
     },
     getSceneMap: function(SID) {
@@ -115,6 +134,8 @@ var db = {
                 return map;
             });
     },
+    
+    /* query action */
     getAID: function(SID, name) {
         if(name[0] == '$') return Promise.resolve(name);
         return db.query('SELECT AID FROM action WHERE SID='+SID+' AND name="'+name+'";')
@@ -123,51 +144,14 @@ var db = {
                 else return null;
             });
     },
-    getSID: function(gameID, scene) {
-        return db.query('SELECT SID FROM scene WHERE GID='+gameID+' AND name="'+scene+'";')
-            .then(function(results, fields) {
-                return results[0].SID;
-            });
-    },
-    refineActions: function(GID, SID, actions) {
-        var querys = [];
-        for (let i in actions) {
-            if (actions[i].type === 'dialogInput') {
-                querys.push(db.getAID(SID, actions[i].action)
-                    .then(function(AID) {
-                        actions[i].action = AID;
-                    })
-                );
-            } else if (actions[i].type === 'dialogChoice') {
-                for (let j in actions[i].options) {
-                    querys.push(db.getAID(SID, actions[i].options[j][1])
-                        .then(function(AID) {
-                            actions[i].options[j][1] = AID;
-                        })
-                    );
-                }
-            } else if (actions[i].type === 'move') {
-                querys.push(db.getSID(GID, actions[i].scene)
-                    .then(function(SID) {
-                        actions[i].scene = SID;
-                    })
-                );
-            }
-        }
-        return Promise.all(querys);
-    },
     getCode: function(AID) {
         return db.query('SELECT code FROM action WHERE AID=' + AID + ';')
             .then(function(results, fields) {
                 return results[0].code;
             });
     },
-    getGameInfo: function(GID) {
-        return db.query('SELECT initSID, initAID FROM game WHERE GID=' + GID + ';')
-            .then(function(results, fields) {
-                return results[0];
-            });
-    },
+    
+    /* query save */
     saveStatus: function(GID, username, json) {
         var qstr = 'INSERT INTO save (GID, username, json) VALUES('+GID+', "'+username+'", \''+json+'\') ';
         qstr += 'ON DUPLICATE KEY UPDATE json=\''+json+'\';';
@@ -178,6 +162,42 @@ var db = {
             .then(function(results, fields) {
                 return results[0].json;
             });
+    },
+    
+    /* utility */
+    refinePlayer: function(GID, SID, player) {
+        var querys = [];
+        for (let i in player.actions) {
+            if (player.actions[i].type === 'dialogInput') {
+                querys.push(db.getAID(SID, player.actions[i].action)
+                    .then(function(AID) {
+                        player.actions[i].action = AID;
+                    })
+                );
+            } else if (player.actions[i].type === 'dialogChoice') {
+                for (let j in player.actions[i].options) {
+                    querys.push(db.getAID(SID, player.actions[i].options[j][1])
+                        .then(function(AID) {
+                            player.actions[i].options[j][1] = AID;
+                        })
+                    );
+                }
+            } else if (player.actions[i].type === 'move') {
+                querys.push(db.getSID(GID, player.actions[i].scene)
+                    .then(function(SID) {
+                        player.actions[i].scene = SID;
+                    })
+                );
+            }
+        }
+        if(typeof(player.game_data.present_scene)==='string') {
+            querys.push(db.getSID(GID, player.game_data.present_scene)
+                .then(function(SID) {
+                    player.game_data.present_scene = SID;
+                })
+            );
+        }
+        return Promise.all(querys);
     }
 }
 module.exports = db;

@@ -69,7 +69,7 @@ app.post('/:game/action/:scene/:actionID', function(req, res) {
             });
             player.actions = [];
             script.runInContext(context);
-            db.refineActions(req.params.game, req.params.scene, player.actions)
+            db.refinePlayer(req.params.game, req.params.scene, player)
                 .then(function() {
                     res.json(player.actions);
                 });
@@ -87,28 +87,6 @@ app.post('/:game/remove_item/:item/:amount', function(req, res) {
         res.json(player.actions);
     }
 });
-
-app.post('/:game/new_card', function(req, res) {
-    var player = new Player(req.session.game[req.params.game]);
-    player.actions = [];
-    if (player.hasItem('悠遊卡')) {
-        player.alertWords('尼還有卡啊不要那麼貪心啦(´・ω・｀)');
-    } else if (player.game_data.states.inTrashcan_c === 'yes' || player.game_data.states.inTrashcan_e === 'yes') {
-        player.alertWords('先把卡從垃圾桶撿回來好嗎(´・ω・｀)卡卡很貴的OUO');
-    } else if (player.game_data.items['錢'].amount < 100) {
-        player.alertWords('尼錢錢不夠哦，乖乖去撿錢錢啦ヽ(✿ﾟ▽ﾟ)ノ');
-    } else {
-        player.setItem('錢', {
-            amount: player.game_data.items['錢'].amount - 100
-        });
-        player.setItem('悠遊卡', {
-            amount: 1,
-            money: 0
-        });
-    }
-    res.json(player.actions);
-});
-
 
 app.get('/:game/scene/:scene', function(req, res) {
     var SID = req.params.scene;
@@ -152,6 +130,28 @@ app.post('/:game/load', function(req, res) {
 app.post('/:game/reset', function(req, res) {
     req.session.game[req.params.game] = null;
     res.send('Pusheen finds new food!');
+});
+
+/* just in case you're stupid */
+app.post('/:game/new_card', function(req, res) {
+    var player = new Player(req.session.game[req.params.game]);
+    player.actions = [];
+    if (player.hasItem('悠遊卡')) {
+        player.alertWords('尼還有卡啊不要那麼貪心啦(´・ω・｀)');
+    } else if (player.game_data.states.inTrashcan_c === 'yes' || player.game_data.states.inTrashcan_e === 'yes') {
+        player.alertWords('先把卡從垃圾桶撿回來好嗎(´・ω・｀)卡卡很貴的OUO');
+    } else if (player.game_data.items['錢'].amount < 100) {
+        player.alertWords('尼錢錢不夠哦，乖乖去撿錢錢啦ヽ(✿ﾟ▽ﾟ)ノ');
+    } else {
+        player.setItem('錢', {
+            amount: player.game_data.items['錢'].amount - 100
+        });
+        player.setItem('悠遊卡', {
+            amount: 1,
+            money: 0
+        });
+    }
+    res.json(player.actions);
 });
 
 /* Start the Server */
