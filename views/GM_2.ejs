@@ -75,6 +75,7 @@ function init(){
     $('.close').click(Close);
     $('.item_head').text("物品欄");
     $.getJSON('/' + gameID + '/sync',function(obj){
+        console.log(obj.present_scene);
         items = new Items();
         for(var key in obj.items){
             items.dic[key] = obj.items[key];
@@ -237,7 +238,8 @@ function indexOf(thing, array){
 }
 
 function loadScene(scene){
-    $.getJSON('/static/maps/'+scene+'.json', function(obj){
+    $.getJSON('/'+gameID+'/scene/'+scene, function(obj){
+        console.log(obj);
         jsonObj = obj;
         var imgC = jsonObj.images.length;
         var bckC = jsonObj.background.length;
@@ -245,20 +247,21 @@ function loadScene(scene){
         $('.back').remove();
         $('.message').hide();
         $("#scene").attr('src', jsonObj.scene);
-        $("#scene").attr('useMap', jsonObj.useMap);
+        $("#scene").attr('useMap', 'scene-map');
         $(document.body).append(jsonObj.map);
         $(document.body).append(jsonObj.map);
         for(var i=0;i<imgC;i++){
             var img = jsonObj.images[i];
-            var new_img;
-            new_img = new Image(img.width, img.height);
-            new_img.src = img.src;
-            new_img.style.position = img.position;
-            new_img.style.top = img.top;
-            new_img.style.left = img.left;
-            new_img.useMap = img.useMap;
-            new_img.className = img.class;
-            $('.stage').append(new_img);
+            var $img = $('<img>');
+            $img.css('width', img.width);
+            $img.css('height', img.height);
+            $img.attr('src', img.src);
+            $img.css('position', 'absolute');
+            $img.css('top', img.y);
+            $img.css('left', img.x);
+            $img.addClass('now');
+            $img.attr('usemap', img.useMap);
+            $('.stage').append($img);
             $(document.body).append(img.map);
         }
         for(var i=0;i<bckC;i++){
@@ -267,11 +270,11 @@ function loadScene(scene){
             $iDiv.css('width', bck.width);
             $iDiv.css('height', bck.height);
             $iDiv.css('background-image', bck.url);
-            $iDiv.css('position', bck.position);
-            $iDiv.css('top', bck.top);
-            $iDiv.css('left', bck.left);
-            $iDiv.addClass(bck.class);
-            $iDiv.click(function(){doAction(bck.onclick);});
+            $iDiv.css('position', 'absolute');
+            $iDiv.css('top', bck.y);
+            $iDiv.css('left', bck.x);
+            $iDiv.addClass('now');
+            $iDiv.click(function(){doAction(bck.AID);});
             $('.stage').append($iDiv);
         }
     });
