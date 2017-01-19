@@ -1,0 +1,29 @@
+{
+"images":[
+{
+    "src":"./static/GMimages/item/train_blue.gif",
+    "width":175,
+    "height":203,
+    "position":"absolute",
+    "top":"65px",
+    "left":"424px",
+    "useMap":"#train",
+    "class":"now",
+    "map":"<map name=\"train\" class=\"now\"><area shape=\"poly\" coords=\"40,41,39,98,67,118,67,52\" onClick=\"doAction('train_e')\"\"></map>"
+}],
+"background":[
+{
+    "name":"machine",
+    "url":"url('./static/GMimages/item/ticketMachine.gif')",
+    "width":"36px",
+    "height":"60px",
+    "position":"absolute",
+    "top":"90px",
+    "left":"175px",
+    "class":"back",
+    "onclick":"machine"
+}],
+"scene":"./static/GMimages/scene/station_e.jpg",
+"useMap":"#station_e",
+"map":"<map name=\"station_e\" class=\"now\"><area shape=\"poly\" coords=\"337,236,321,238,314,248,327,256,344,257,360,253,363,245,355,240\" onClick=\"doAction('trashcan_e')\"\"></map>"
+}

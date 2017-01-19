@@ -1,0 +1,135 @@
+.stage {
+        width:699px;
+        height:400px;
+        position:absolute;
+        left:50%;
+        margin-left: -350px;
+        top:50%;
+        margin-top: -184px;
+}
+.message {
+        background-color:#BDB76B;
+        z-index:100;
+        position:absolute;
+        width:400px;
+        height:270px;
+        top:49px;
+        left:100px;
+        display:none;
+}
+.between {
+        position:absolute;
+        width:380px;
+        height:250px;
+        top:8px;
+        left:8px;
+        border-style:dashed;
+        border-width:2px;
+}
+.msg_box {
+        position:absolute;
+        width:370px;
+        height:225px;
+        top:4px;
+        left:4px;
+        word-break: normal;
+        overflow: auto;
+}
+.msg_person {
+        position:float;
+        float: left;
+}
+.msg_content {
+        position:float;
+        float: left;
+        width:300px;        
+}
+.close {
+        filter: brightness(120%);
+        position:absolute;
+        width:80px;
+        height:20px;
+        left:150px;
+        bottom:4px;
+        border-bottom-style:solid;
+        border-right-style:solid;
+        border-width:2px;
+        text-align: center;
+        cursor: pointer;
+}
+a:hover {
+        color:gray;
+        cursor:pointer;
+}
+.items {
+        position:absolute;
+        width:100px;
+        height:367px;
+        right:0;
+}
+.item_head {
+        position:absolute;
+        width:100px;
+        height:20px;
+        background-color:#8B0000;
+        color:#FFFFFF;
+        text-align: center;
+}
+.item_box {
+        position:absolute;
+        width:100px;
+        height:347px;
+        top:20px;
+}
+.item {
+		position:relative;
+		width:100px;
+		height:30px;
+}
+.throw_item {
+		position:absolute;
+		width:10px;
+		height:30px;
+		right:10px;
+		top:0px;
+		cursor: pointer;
+}
+.saveLoad {
+        background-color:#F0F8FF;
+        border-bottom-style:solid;
+        border-right-style:solid;
+        border-width:2px;
+        position:absolute;
+        width:60px;
+        height:20px;
+        left:535px;
+        top:371px;
+        cursor: default;
+        text-align: center;
+}
+.reset{
+        background-color:#F0F8FF;
+        border-bottom-style:solid;
+        border-right-style:solid;
+        border-width:2px;
+        position:absolute;
+        width:80px;
+        height:20px;
+        left:290px;
+        top:371px;
+        cursor: default;
+        text-align: center;
+}
+.newCard{
+        background-color:#F0F8FF;
+        border-bottom-style:solid;
+        border-right-style:solid;
+        border-width:2px;
+        position:absolute;
+        width:150px;
+        height:20px;
+        left:375px;
+        top:371px;
+        cursor: default;
+        text-align: center;
+}

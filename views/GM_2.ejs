@@ -1,0 +1,301 @@
+<!DOCTYPE HTML>
+<html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
+    <title>超高校級的神的錢錢</title>
+</head>
+<body onload = "init()">
+<link rel="stylesheet" type="text/css" href="/static/GM_2.css"/>
+<script type="text/javascript" src="https://ajax.googleapis.com/ajax/libs/jquery/1.12.4/jquery.min.js"></script>
+<script src="/static/js.cookie.js"></script>
+<script>
+gameID = <%= gameID %>;
+jsonObj = null;
+nowScene = '';
+
+function Items(){
+    this.dic = {};
+}
+
+Items.prototype.setItem = function(key, attrs){
+    for(var attr in attrs){
+        this.dic[key][attr] = attrs[attr];
+    }
+    this.display();
+}
+
+Items.prototype.removeItem = function(key, amount){
+    this.dic[key].amount -= amount;
+    this.display();
+}
+
+Items.prototype.display = function(){
+	$('.item_box').empty();
+	for(var key in this.dic){
+		if(this.dic[key].amount > 0){
+            var $iDiv = $('<div>');
+            $iDiv.addClass('item');
+            $iDiv.text(key + ' x ' + this.dic[key].amount);
+            var $X = $('<div>');
+            $X.addClass('throw_item');
+            $X.text('X').on("click", null, key, throwItem).appendTo($iDiv);
+            $('.item_box').append($iDiv);
+        }
+	}
+}
+
+Items.prototype.has = function(item){
+    if(indexOf(item, this.arr) < this.arr.length){
+        return true;
+    }
+    else{
+        return false;
+    }
+}
+
+function init(){
+    $('.message').hide();
+    $('.saveLoad').text('存/讀檔');
+    $('.reset').text('重新開始');
+    $('.newCard').text('用100元重買一張卡');
+    $('.saveLoad').click(function(){
+        dialogChoice('Pusheen', '「想要存檔還是讀檔呢？」', [
+            ['「存檔」', '$Save'],
+            ['「讀檔」', '$Load'],
+            ['「沒事，我按錯了」', '$Close']
+        ]);
+    });
+    $('.reset').click(function(event){
+        if(confirm("錢錢會全部不見哦(σﾟ∀ﾟ)σ 真的要重新開始嗎？")){
+            Reset();
+        }
+        //$(this).off(event);
+    });
+    $('.close').text("關閉");
+    $('.close').click(Close);
+    $('.item_head').text("物品欄");
+    $.getJSON('/' + gameID + '/sync',function(obj){
+        items = new Items();
+        for(var key in obj.items){
+            items.dic[key] = obj.items[key];
+        }
+        loadScene(obj.present_scene);
+        items.display();
+    });
+    $('.newCard').click(function(event){
+        if(confirm("真的要重買一張卡嗎？")){
+            doAction('new_card', {}, true);    
+        }
+    });
+}
+
+function throwItem(e){
+    var item = e.data;
+    var number;
+    if((number = prompt("想要丟掉多少呢？", "0"))!=null){
+        while(isNaN(number) || number > items.dic[item].amount || number < 0){
+            number = parseInt(prompt("輸入無效。想要丟掉多少呢？", "0"));
+        }
+        if(number >0 && confirm("真的要丟掉嗎？會找不回乃哦OUO")){
+            $.post('/' + gameID + '/remove_item/' + item + '/' + number, function(obj){
+                jsonObj = obj[0];
+                if(jsonObj.type==='remove_item'){
+                    items.removeItem(jsonObj.item, jsonObj.amount);
+                }
+            });
+        }
+    }
+}    
+
+function Close(){
+    $('.message').hide();
+}
+
+function Save(){
+    var id = prompt("請輸入尼想要被存的ID：","");
+    if(id != null){
+        var data = {id: id};
+        $.post('/' + gameID + '/save', data, function(obj){
+            dialogChoice('Pusheen', '「已經成功存檔:D」', []);
+        }, 'text');
+    }
+}
+
+function Load(){
+    var id;
+    if((id = prompt("請輸入尼想要讀檔的ID：","")) != null){
+        var data = {id: id};
+        $.post('/' + gameID + '/load', data, function(obj){
+            init();
+        }, 'text');
+    }
+}
+
+function Reset(){
+    $.post('/' + gameID + '/reset', function(obj){
+        location.reload();
+    }, 'text');
+}
+
+function dialogInput(name, content, action){
+    $('.msg_box').html(name+'：'+content);
+    $('.msg_box').append('<br>');
+    $('<input type="number" min="0" id="input")>').keypress(function(event){
+        var keycode = event.which;
+        if(keycode == '13'){
+            var input = $('#input').val();
+            doAction(action, {quantity: input});
+        }
+	}).appendTo('.msg_box').focus();
+    $('<input type="submit" value="送出">').click(function(event){   
+        var input = $('#input').val();
+        doAction(action, {quantity: input});
+	}).appendTo('.msg_box');
+    $('.message').show();
+}
+
+function dialogChoice(name, content, funcArr){
+    var i;
+    var len = funcArr.length;
+    $('.msg_box').empty();
+    $('<div>').addClass('msg_person').text(name).append('：').appendTo('.msg_box');
+    $('<div>').addClass('msg_content').text(content).appendTo('.msg_box');
+    if(len > 0){
+        $('<br>').css("clear", "left").appendTo('.msg_box');
+        $('<hr>').css("clear", "left").appendTo('.msg_box');
+    }
+    for(i=0;i<len;i++){
+        function jail(){
+            $('.msg_box').append('<br>');
+            var actionName = funcArr[i][1];
+            if(actionName === '$Close'){
+                $('<a>').text(funcArr[i][0]).click(Close).appendTo('.msg_box');
+            }
+            else if(actionName === '$Save'){
+                $('<a>').text(funcArr[i][0]).click(Save).appendTo('.msg_box');
+            }
+            else if(actionName === '$Load'){
+                $('<a>').text(funcArr[i][0]).click(Load).appendTo('.msg_box');
+            }
+            else{
+                $('<a>').text(funcArr[i][0]).click(function(){doAction(actionName);}).appendTo('.msg_box');
+            }
+        }
+        jail();
+    }
+    $('.message').show();   
+}
+
+function doAction(action, data,notScene){
+    data = data || {};
+    var path = '/' + gameID;
+    if(!notScene){
+        path += '/action/' + nowScene;
+    }
+    path += '/' + action;
+    $.post(path, data, function(obj){
+        jsonObj = obj;
+        var len = jsonObj.length;
+        for(var i=0;i<len;i++){
+            if(jsonObj[i].type === 'dialogChoice'){
+                var name = jsonObj[i].name;
+                var content = jsonObj[i].content;
+                var funcArr = jsonObj[i].options;
+                dialogChoice(name, content, funcArr);
+            }
+            else if(jsonObj[i].type === 'dialogInput'){
+                var name = jsonObj[i].name;
+                var content = jsonObj[i].content;
+                var action = jsonObj[i].action;
+                dialogInput(name, content, action);
+            }
+            else if(jsonObj[i].type === 'move'){
+                var scene = jsonObj[i].scene;
+                loadScene(scene);
+            }
+            else if(jsonObj[i].type === 'set_item'){
+                var item = jsonObj[i].item;
+                var attrs = jsonObj[i].attrs;
+                items.setItem(item, attrs);
+            }
+            else if(jsonObj[i].type === 'alert'){
+                alert(jsonObj[i].content);
+            }
+        }
+    }, 'json');
+}
+
+function indexOf(thing, array){
+    var i=0;
+    var len = array.length;
+    for(i=0;i<len;i++){
+        if(thing==array[i]){
+            return i;
+        }
+    }
+    return i;
+}
+
+function loadScene(scene){
+    $.getJSON('/static/maps/'+scene+'.json', function(obj){
+        jsonObj = obj;
+        var imgC = jsonObj.images.length;
+        var bckC = jsonObj.background.length;
+        $('.now').remove();
+        $('.back').remove();
+        $('.message').hide();
+        $("#scene").attr('src', jsonObj.scene);
+        $("#scene").attr('useMap', jsonObj.useMap);
+        $(document.body).append(jsonObj.map);
+        $(document.body).append(jsonObj.map);
+        for(var i=0;i<imgC;i++){
+            var img = jsonObj.images[i];
+            var new_img;
+            new_img = new Image(img.width, img.height);
+            new_img.src = img.src;
+            new_img.style.position = img.position;
+            new_img.style.top = img.top;
+            new_img.style.left = img.left;
+            new_img.useMap = img.useMap;
+            new_img.className = img.class;
+            $('.stage').append(new_img);
+            $(document.body).append(img.map);
+        }
+        for(var i=0;i<bckC;i++){
+            var bck = jsonObj.background[i];
+            var $iDiv = $('<div>');
+            $iDiv.css('width', bck.width);
+            $iDiv.css('height', bck.height);
+            $iDiv.css('background-image', bck.url);
+            $iDiv.css('position', bck.position);
+            $iDiv.css('top', bck.top);
+            $iDiv.css('left', bck.left);
+            $iDiv.addClass(bck.class);
+            $iDiv.click(function(){doAction(bck.onclick);});
+            $('.stage').append($iDiv);
+        }
+    });
+    nowScene = scene;
+    Cookies.set('states.load_scene', scene);
+}
+
+</script>
+
+<div class="stage">
+<div class="saveLoad"></div>
+<div class="reset"></div>
+<div class="newCard"></div>
+<div class="items">
+    <div class="item_head"></div>
+    <div class="item_box"></div>
+</div>
+<div class="message">
+    <div class="between">
+        <div class="msg_box"></div>
+        <div class="close"></div>
+    </div>
+</div>
+<img src="http://placehold.it/599x367" id="scene"/>
+</div>
+</body>
+</html>
