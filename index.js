@@ -1,12 +1,13 @@
-var fs = require('fs');
-var express = require('express');
-var Player = require('./Player');
-var bodyParser = require('body-parser');
-var app = express();
-var session = require('express-session');
-var path = require('path');
-var vm = require('vm');
-var db = require('./database');
+const fs = require('fs');
+const path = require('path');
+const vm = require('vm');
+const bodyParser = require('body-parser');
+const express = require('express');
+const session = require('express-session');
+const db = require('./database');
+const Player = require('./player');
+
+const app = express();
 
 /* Middlewares */
 app.use('/static', express.static(__dirname + '/static'));
@@ -37,26 +38,21 @@ app.get('/:game', function(req, res) {
 
 app.get('/:game/sync', function(req, res) {
     if (!req.session.game[req.params.game]) {
-        db.query('SELECT initSID FROM game WHERE GID=' + req.params.game + ';')
-            .then(function(results, fields) {
-                req.session.game[req.params.game] = {};
-                req.session.game[req.params.game].present_scene = results[0].initSID;
-                req.session.game[req.params.game].items = {
-                    '錢': {
-                        amount: 0
-                    },
-                    '悠遊卡': {
-                        amount: 1,
-                        money: 0
-                    },
-                    '票': {
-                        amount: 0
-                    }
-                };
-                req.session.game[req.params.game].states = {
-                    'inTrashcan_c': 'no',
-                    'inTrashcan_e': 'no'
-                };
+        db.getGameInfo(req.params.game)
+            .then(function(gameInfo) {
+                req.session.game[req.params.game] = {items: {}, states: {}};
+                req.session.game[req.params.game].present_scene = gameInfo.initSID;
+                return gameInfo.initAID;
+            })
+            .then(function(initAID) {
+                return db.getCode(initAID);
+            })
+            .then(function(code) {
+                var script = new vm.Script(code);
+                var context = new vm.createContext({
+                    player: new Player(req.session.game[req.params.game]),
+                });
+                script.runInContext(context);
                 res.json(req.session.game[req.params.game]);
             });
     } else res.json(req.session.game[req.params.game]);
@@ -64,9 +60,9 @@ app.get('/:game/sync', function(req, res) {
 
 app.post('/:game/action/:scene/:actionID', function(req, res) {
     var player = new Player(req.session.game[req.params.game]);
-    db.query('SELECT code FROM action WHERE AID=' + req.params.actionID + ';')
-        .then(function(results, fields) {
-            var script = new vm.Script(results[0].code);
+    db.getCode(req.params.actionID)
+        .then(function(code) {
+            var script = new vm.Script(code);
             var context = new vm.createContext({
                 player: player,
                 data: parseInt(req.body.quantity)
@@ -87,7 +83,6 @@ app.post('/:game/remove_item/:item/:amount', function(req, res) {
     player.actions = [];
     if (isNaN(amount) || amount > player.game_data.items[item].amount || amount < 0) return;
     else {
-        console.log("in");
         player.removeItem(item, amount);
         res.json(player.actions);
     }
@@ -139,17 +134,19 @@ app.get('/:game/scene/:scene', function(req, res) {
 });
 
 app.post('/:game/save', function(req, res) {
-    var path = './saves/' + req.body.id + '.json';
     var str = JSON.stringify(req.session.game[req.params.game]);
-    fs.writeFileSync(path, str, 'utf8');
-    res.send('Pusheen is happy!');
+    db.saveStatus(req.params.game, req.body.id, str)
+        .then(function() {
+            res.send('Pusheen is happy!');
+        });
 });
 
 app.post('/:game/load', function(req, res) {
-    var path = './saves/' + req.body.id + '.json';
-    var str = fs.readFileSync(path, 'utf8');
-    req.session.game[req.params.game] = JSON.parse(str);
-    res.send('Pusheen is eating doughnuts!');
+    db.loadStatus(req.params.game, req.body.id)
+        .then(function(str) {
+            req.session.game[req.params.game] = JSON.parse(str);
+            res.send('Pusheen is eating doughnuts!');
+        });
 });
 
 app.post('/:game/reset', function(req, res) {

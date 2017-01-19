@@ -146,6 +146,20 @@ var station_e = {
         player.setItem('悠遊卡', {amount: 1});
         player.game_data.states.inTrashcan_e = 'no';
         player.dialogChoice('自己', '「把悠遊卡撿回來惹ˊ_>ˋ」', []);
+    },
+    
+    getCode: function(AID) {
+        return db.query('SELECT code FROM action WHERE AID=' + AID + ';')
+            .then(function(results, fields) {
+                return results[0].code;
+            });
+    },
+    
+    getGameInfo: function(GID) {
+        return db.query('SELECT initSID, initAID FROM game WHERE GID=' + req.params.game + ';')
+            .then(function(results, fields) {
+                return results[0];
+            });
     }
 }
 

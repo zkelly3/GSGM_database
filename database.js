@@ -155,6 +155,29 @@ var db = {
             }
         }
         return Promise.all(querys);
+    },
+    getCode: function(AID) {
+        return db.query('SELECT code FROM action WHERE AID=' + AID + ';')
+            .then(function(results, fields) {
+                return results[0].code;
+            });
+    },
+    getGameInfo: function(GID) {
+        return db.query('SELECT initSID, initAID FROM game WHERE GID=' + GID + ';')
+            .then(function(results, fields) {
+                return results[0];
+            });
+    },
+    saveStatus: function(GID, username, json) {
+        var qstr = 'INSERT INTO save (GID, username, json) VALUES('+GID+', "'+username+'", \''+json+'\') ';
+        qstr += 'ON DUPLICATE KEY UPDATE json=\''+json+'\';';
+        return db.query(qstr);
+    },
+    loadStatus: function(GID, username) {
+        return db.query('SELECT json FROM save WHERE GID='+GID+' AND username="'+username+'";')
+            .then(function(results, fields) {
+                return results[0].json;
+            });
     }
 }
 module.exports = db;
